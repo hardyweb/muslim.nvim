@@ -26,14 +26,12 @@ A plugin to get prayer times and useful islamic essentials inside neovim
 Install the plugin with your preferred package manager
 
 ```lua
-{
-    "tajirhas9/muslim.nvim",
-    dependencies = {
-        "nvim-lua/plenary.nvim",
-        -- OPTIONAL
-        "nvim-lualine/lualine"
-    }
-}
+vim.pack.add({
+    { url = "https://github.com/hardyweb/muslim.nvim" },
+    { url = "https://github.com/nvim-lua/plenary.nvim" },
+    -- OPTIONAL
+    { url = "https://github.com/nvim-lualine/lualine.nvim" },
+})
 ```
 
 ## ⚙️ Configuration
