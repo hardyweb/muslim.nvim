@@ -9,6 +9,7 @@ A plugin to get prayer times and useful islamic essentials inside neovim
 ## ✨ Features
 
 - complete offline calculation based on [Equation of Time](https://en.wikipedia.org/wiki/Equation_of_time) and [Declination of Sun](https://www.pveducation.org/pvcdrom/properties-of-sunlight/declination-angle)
+- **E-Solat API support** - official JAKIM prayer times for Malaysia (46 zones)
 - supports hanafi school of thought adjustments
 - supported methods: MWL, ISNA, Egypt, Makkah, Karachi, Tehran, Jafari, France, Russia, Singapore.
 - supports higher latitude adjustment
@@ -41,14 +42,51 @@ Install the plugin with your preferred package manager
 
 ```lua
 {
-    refresh    = 1,         -- Refresh interval in minutes to update prayer waqt times
-    latitude   = nil,       -- MANDATORY TO BE PROVIDED. Geolocation latitude of the place of calculation
-    longitude  = nil,       -- MANDATORY TO BE PROVIDED. Geolocation longitude of the place of calculation
-    utc_offset = 0,         -- timezone, default is GMT+0
-    school     = 'hanafi',  -- school of thought
-    method     = 'MWL',     -- calculation method. default is Muslim World League
+    refresh     = 1,          -- Refresh interval in minutes to update prayer waqt times
+    data_source = 'offline',  -- 'offline' or 'esolat' (Malaysia JAKIM)
+    zone        = 'WLY01',    -- E-Solat zone code (for data_source = 'esolat')
+    latitude    = nil,        -- MANDATORY for offline. Geolocation latitude
+    longitude   = nil,        -- MANDATORY for offline. Geolocation longitude
+    utc_offset  = 0,          -- timezone, default is GMT+0 (auto-set to 8 for esolat)
+    school      = 'hanafi',   -- school of thought (offline only)
+    method      = 'MWL',      -- calculation method (offline only)
 }
 ```
+
+### Data Sources
+
+| Source | Description | Required Config |
+|--------|-------------|-----------------|
+| `offline` | Astronomical calculation (default) | `latitude`, `longitude`, `utc_offset` |
+| `esolat` | JAKIM E-Solat API (Malaysia) | `zone` |
+
+## 🚀 Setup
+
+### Offline Mode (Worldwide)
+
+```lua
+local muslim = require("muslim")
+muslim.setup({
+    latitude = 23.816237996387994, 
+    longitude = 90.79664030627636,
+    timezone = 'Asia/Dhaka',
+    utc_offset = 6,
+    refresh = 5
+})
+```
+
+### E-Solat Mode (Malaysia)
+
+```lua
+local muslim = require("muslim")
+muslim.setup({
+    data_source = 'esolat',
+    zone = 'WLY01',  -- Kuala Lumpur, Putrajaya
+    refresh = 5
+})
+```
+
+Use `:PrayerZones` to see all available Malaysia zone codes.
 ## 🛠️ Setup
 
 ```lua
@@ -70,6 +108,8 @@ muslim.setup({
 | Command | Description |
 | -- | -- |
 | `:PrayerTimes` | Returns a table with formatted waqt times for the day |
+| `:PrayerZones` | Lists all E-Solat zone codes (Malaysia) |
+| `:PrayerRefresh` | Refresh prayer times from data source |
 
 ### `:PrayerTimes` sample return value
 

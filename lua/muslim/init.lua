@@ -1,12 +1,13 @@
 local M = {
     config = {
-        refresh    = 1,
-        latitude   = nil,
-        longitude  = nil,
-        utc_offset = 0,
-        school     = 'hanafi',
-        method     = 'MWL',
-        -- api_url    = "https://api.aladhan.com/v1/timings"
+        refresh     = 1,
+        data_source = 'offline',
+        zone        = 'WLY01',
+        latitude    = nil,
+        longitude   = nil,
+        utc_offset  = 0,
+        school      = 'hanafi',
+        method      = 'MWL',
     },
     prayer_time_text = 'Please wait...',
 }
@@ -14,43 +15,45 @@ local M = {
 
 
 M.setup = function(opts)
-    -- Check if plenary is installed
     if not pcall(require, 'plenary') then
-        vim.notify('[prayer.nvim] please install plenary.nvim', vim.log.levels.WARN)
+        vim.notify('[muslim.nvim] please install plenary.nvim', vim.log.levels.WARN)
         return
     end
-    -- Check if lualine is intalled
     if not pcall(require, 'lualine') then
-        vim.notify('[prayer.nvim] did not find lualine. only user_commands will be available', vim.log.levels.WARN)
-        -- return
+        vim.notify('[muslim.nvim] did not find lualine. only user_commands will be available', vim.log.levels.WARN)
     end
 
-    -- init config
     opts = opts or {}
     for k, v in pairs(opts) do M.config[k] = v end
 
-    -- validate config
-    if not M.config.latitude or not M.config.longitude or not M.config.utc_offset then
-        vim.notify('[prayer.nvim] please set latitude, longitude and utc_offset', vim.log.levels.WARN)
-        return
+    if M.config.data_source == 'esolat' then
+        local zones = require("muslim.zones")
+        if not zones.is_valid_zone(M.config.zone) then
+            vim.notify(string.format('[muslim.nvim] Invalid E-Solat zone: %s', M.config.zone), vim.log.levels.WARN)
+            return
+        end
+        M.prayer_module = require("muslim.esolat")
+        M.prayer_module.setup({ zone = M.config.zone })
+        M.config.utc_offset = M.config.utc_offset or 8
+    else
+        if not M.config.latitude or not M.config.longitude or not M.config.utc_offset then
+            vim.notify('[muslim.nvim] please set latitude, longitude and utc_offset for offline calculation', vim.log.levels.WARN)
+            return
+        end
+        M.prayer_module = require("muslim.prayer_calc")
+        M.prayer_module.setup({
+            location = {
+                lat = M.config.latitude,
+                lng = M.config.longitude,
+            },
+            utc_offset = M.config.utc_offset,
+            asr = M.config.school,
+            method = M.config.method
+        })
     end
 
-    M.prayer_module = require("muslim.prayer_calc")
-
-    M.prayer_module.setup({
-        location = {
-            lat = M.config.latitude,
-            lng = M.config.longitude,
-        },
-        utc_offset = M.config.utc_offset,
-        asr = M.config.school,
-        method = M.config.method
-    })
-
-    -- First run
     M.update()
 
-    -- Refresh every x minute(s)
     local timer = vim.loop.new_timer()
     timer:start(
         M.config.refresh * 60 * 1000,
@@ -112,12 +115,36 @@ end
 
 vim.api.nvim_create_user_command("PrayerTimes", function()
     local times = M.prayer_module.get_times()
+    if not times then
+        vim.notify('[muslim.nvim] Could not fetch prayer times', vim.log.levels.ERROR)
+        return
+    end
     local formatted = {}
     for k, v in pairs(times) do
         formatted[k] = require("muslim.utils").format_time(v, M.config.utc_offset * 60, "12H")
     end
     vim.print(formatted)
     return formatted
+end, {})
+
+vim.api.nvim_create_user_command("PrayerZones", function()
+    local zones = require("muslim.zones")
+    local zone_list = {}
+    for _, group in ipairs(zones.zones) do
+        table.insert(zone_list, string.format("=== %s ===", group.group))
+        for _, option in ipairs(group.options) do
+            table.insert(zone_list, string.format("  %s", option.text))
+        end
+    end
+    vim.print(zone_list)
+end, {})
+
+vim.api.nvim_create_user_command("PrayerRefresh", function()
+    if M.prayer_module and M.prayer_module.refresh then
+        M.prayer_module.refresh()
+        M.update()
+        vim.notify('[muslim.nvim] Prayer times refreshed', vim.log.levels.INFO)
+    end
 end, {})
 
 return M
