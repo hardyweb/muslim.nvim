@@ -15,7 +15,7 @@ A plugin to get prayer times and useful islamic essentials inside neovim
 - supports higher latitude adjustment
 - lualine integration to display current waqt status
 
-## 📦 Requriements
+## 📦 Requirements
 
 - Neovim >= 0.11
 - [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
@@ -45,9 +45,9 @@ vim.pack.add({
     zone        = 'WLY01',    -- E-Solat zone code (for data_source = 'esolat')
     latitude    = nil,        -- MANDATORY for offline. Geolocation latitude
     longitude   = nil,        -- MANDATORY for offline. Geolocation longitude
-    utc_offset  = 0,          -- timezone, default is GMT+0 (auto-set to 8 for esolat)
-    school      = 'hanafi',   -- school of thought (offline only)
-    method      = 'MWL',      -- calculation method (offline only)
+    utc_offset  = 0,          -- Timezone offset from GMT (e.g., 8 for Malaysia)
+    school      = 'hanafi',   -- School of thought: 'hanafi' or 'standard' (offline only)
+    method      = 'MWL',      -- Calculation method (offline only)
 }
 ```
 
@@ -65,10 +65,12 @@ vim.pack.add({
 ```lua
 local muslim = require("muslim")
 muslim.setup({
-    latitude = 23.816237996387994, 
-    longitude = 90.79664030627636,
-    timezone = 'Asia/Dhaka',
-    utc_offset = 6,
+    data_source = 'offline',
+    latitude = 3.139,      -- Kuala Lumpur
+    longitude = 101.6869,
+    utc_offset = 8,        -- GMT+8
+    school = 'hanafi',     -- optional: 'hanafi' or 'standard'
+    method = 'MWL',        -- optional: MWL, ISNA, Egypt, Makkah, Karachi, Tehran, Jafari, France, Russia, Singapore
     refresh = 5
 })
 ```
@@ -85,19 +87,16 @@ muslim.setup({
 ```
 
 Use `:PrayerZones` to see all available Malaysia zone codes.
-## 🛠️ Setup
 
-```lua
-local muslim = require("muslim")
-muslim.setup({
-    latitude = 23.816237996387994, 
-    longitude = 90.79664030627636,
-    timezone = 'Asia/Dhaka',
-    utc_offset = 6,
-    refresh = 5
-})
+### Sample Coordinates
 
-```
+| Location | Latitude | Longitude | UTC Offset |
+|----------|----------|-----------|------------|
+| Kuala Lumpur, Malaysia | 3.139 | 101.6869 | 8 |
+| Dhaka, Bangladesh | 23.8162 | 90.7966 | 6 |
+| Jakarta, Indonesia | -6.2088 | 106.8456 | 7 |
+| London, UK | 51.5074 | -0.1278 | 0 |
+| New York, USA | 40.7128 | -74.0060 | -5 |
 
 ## 🧭 Commands
 
@@ -141,7 +140,17 @@ If you want the prayer times to appear in the statusline, you have to update you
 { muslim.prayer_time, id = "muslim.nvim" }
 ```
 
-### 🎨 Sample lualine configuration
+### Simple lualine configuration
+
+```lua
+require("lualine").setup({
+    sections = {
+        lualine_c = { "filename", require("muslim").prayer_time },
+    },
+})
+```
+
+### 🎨 Full lualine configuration
 
 To get something similar to the image above, the configuration can be as below:
 
